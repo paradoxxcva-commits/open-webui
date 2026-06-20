@@ -8,16 +8,15 @@ services:
       - '8088:8080'
     volumes:
       - 'open-webui-data:/app/backend/data'
+    # Даем контейнеру права на управление своей маршрутизацией
+    cap_add:
+      - NET_ADMIN
     environment:
       WEBUI_SECRET_KEY: 6mQ_bXEgtcuB
       WEBUI_AUTH: 'True'
       ENABLE_OLLAMA_API: 'False'
       ENABLE_SIGNUP: 'True'
-      # Перенаправляем трафик на соседний контейнер privoxy по HTTP-протоколу
-      HTTP_PROXY: 'http://open-webui-privoxy:8118'
-      HTTPS_PROXY: 'http://open-webui-privoxy:8118'
-      # Исключаем локальные сети и хосты из проксирования
-      NO_PROXY: 'localhost,127.0.0.1,::1,host.docker.internal,open-webui,open-webui-privoxy,172.16.0.0/12,192.168.0.0/16,10.0.0.0/8'
+      # Полностью УДАЛЯЕМ переменные HTTP_PROXY / HTTPS_PROXY / NO_PROXY
     extra_hosts:
       - 'host.docker.internal:host-gateway'
     restart: unless-stopped
@@ -29,20 +28,15 @@ services:
       - traefik.http.routers.openwebui-custom.entrypoints=websecure
       - traefik.http.routers.openwebui-custom.tls=true
       - traefik.http.services.openwebui-custom.loadbalancer.server.port=8080
-    depends_on:
-      - privoxy
-
-  privoxy:
-    image: vimagick/privoxy
-    container_name: open-webui-privoxy
-    restart: unless-stopped
-    networks:
-      - coolify
-    # Настраиваем privoxy "на лету" пересылать всё на твой SOCKS5 с remote DNS (socks5t)
-    # Точка в конце команды обязательна!
+    # Меняем Default Gateway внутри контейнера при старте.
+    # 172.16.0.0/12, 192.168.0.0/16, 10.0.0.0/8 — это чтобы локальный трафик (включая сеть coolify)
+    # шел через стандартный интерфейс Docker и Traefik его видел, а весь интернет (0.0.0.0/0) уходил на Debian.
     command: >
-      sh -c "echo 'listen-address 0.0.0.0:8118' > /etc/privoxy/config &&
-             echo 'forward-socks5t / nelly.ignorelist.com:25851 .' >> /etc/privoxy/config"
+      sh -c "ip route add 172.16.0.0/12 dev eth0 via 172.18.0.1 || true &&
+             ip route add 192.168.0.0/16 dev eth0 via 172.18.0.1 || true &&
+             ip route del default &&
+             ip route add default via 192.168.31.245 &&
+             exec /start.sh"
 
 networks:
   coolify:
