@@ -1,11 +1,12 @@
 version: '3.8'
 
 services:
-  # Легковесный конвертер: принимает HTTP-трафик на порту 8080 и гонит его в твой SOCKS5
+  # Наш локальный конвертер SOCKS5 -> HTTP
   proxy-converter:
     image: gogost/gost:latest
     container_name: openwebui-proxy-bridge
-    command: "-L=http://:8080 -F=socks5h://nelly.ignorelist.com:25851"
+    # Используем массив для точной передачи аргументов на порт 8888
+    command: ["-L=http://:8888", "-F=socks5h://nelly.ignorelist.com:25851"]
     restart: unless-stopped
     networks:
       - coolify
@@ -22,9 +23,9 @@ services:
       WEBUI_AUTH: "True"
       ENABLE_OLLAMA_API: "False"
       ENABLE_SIGNUP: "True"
-      # Указываем Open WebUI ходить через наш локальный HTTP-мост
-      HTTP_PROXY: "http://proxy-converter:8080"
-      HTTPS_PROXY: "http://proxy-converter:8080"
+      # Направляем трафик на порт 8888 конвертера
+      HTTP_PROXY: "http://proxy-converter:8888"
+      HTTPS_PROXY: "http://proxy-converter:8888"
       NO_PROXY: "localhost,127.0.0.1,::1,host.docker.internal,open-webui,proxy-converter,172.16.0.0/12,192.168.0.0/16,10.0.0.0/8"
     extra_hosts:
       - "host.docker.internal:host-gateway"
