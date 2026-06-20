@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   open-webui:
     image: ghcr.io/open-webui/open-webui:main
@@ -7,17 +9,17 @@ services:
     volumes:
       - open-webui-data:/app/backend/data
     environment:
-      WEBUI_SECRET_KEY: 6mQ_bXEgtcuB
+      WEBUI_SECRET_KEY: "6mQ_bXEgtcuB"
       WEBUI_AUTH: "True"
       ENABLE_OLLAMA_API: "False"
-      HTTP_PROXY: socks5://nelly.ignorelist.com:25851
       ENABLE_SIGNUP: "True"
-      HTTPS_PROXY: socks5://nelly.ignorelist.com:25851
-      NO_PROXY: 'localhost,127.0.0.1,::1,host.docker.internal,open-webui,172.16.0.0/12,192.168.0.0/16,10.0.0.0/8'
+      # Исправлено на socks5h:// для удаленного DNS-резолва
+      HTTP_PROXY: "socks5h://nelly.ignorelist.com:25851"
+      HTTPS_PROXY: "socks5h://nelly.ignorelist.com:25851"
+      NO_PROXY: "localhost,127.0.0.1,::1,host.docker.internal,open-webui,172.16.0.0/12,192.168.0.0/16,10.0.0.0/8"
     extra_hosts:
-      - 'host.docker.internal:host-gateway'
+      - "host.docker.internal:host-gateway"
     restart: unless-stopped
-    # Подключаем контейнер к сети Coolify
     networks:
       - coolify
     labels:
@@ -34,3 +36,4 @@ networks:
 
 volumes:
   open-webui-data:
+    name: open-webui-data_volume
