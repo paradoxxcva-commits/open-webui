@@ -8,7 +8,7 @@ services:
       - '8088:8080'
     volumes:
       - 'open-webui-data:/app/backend/data'
-    # Даем контейнеру права на управление своей маршрутизацией
+    # Обязательно оставляем права на маршрутизацию
     cap_add:
       - NET_ADMIN
     environment:
@@ -16,7 +16,6 @@ services:
       WEBUI_AUTH: 'True'
       ENABLE_OLLAMA_API: 'False'
       ENABLE_SIGNUP: 'True'
-      # Полностью УДАЛЯЕМ переменные HTTP_PROXY / HTTPS_PROXY / NO_PROXY
     extra_hosts:
       - 'host.docker.internal:host-gateway'
     restart: unless-stopped
@@ -28,15 +27,19 @@ services:
       - traefik.http.routers.openwebui-custom.entrypoints=websecure
       - traefik.http.routers.openwebui-custom.tls=true
       - traefik.http.services.openwebui-custom.loadbalancer.server.port=8080
-    # Меняем Default Gateway внутри контейнера при старте.
-    # 172.16.0.0/12, 192.168.0.0/16, 10.0.0.0/8 — это чтобы локальный трафик (включая сеть coolify)
-    # шел через стандартный интерфейс Docker и Traefik его видел, а весь интернет (0.0.0.0/0) уходил на Debian.
+    # Динамически определяем старый шлюз, фиксируем локалку и меняем default gateway
     command: >
-      sh -c "ip route add 172.16.0.0/12 dev eth0 via 172.18.0.1 || true &&
-             ip route add 192.168.0.0/16 dev eth0 via 172.18.0.1 || true &&
-             ip route del default &&
-             ip route add default via 192.168.31.245 &&
-             exec /start.sh"
+      sh -c "
+      OLD_GW=\$(ip route show | grep default | awk '{print \$3}');
+      if [ -n \"\$OLD_GW\" ]; then
+        ip route add 172.16.0.0/12 via \$OLD_GW || true;
+        ip route add 192.168.0.0/16 via \$OLD_GW || true;
+        ip route add 10.0.0.0/8 via \$OLD_GW || true;
+        ip route del default;
+      fi;
+      ip route add default via 192.168.31.245;
+      exec /start.sh
+      "
 
 networks:
   coolify:
