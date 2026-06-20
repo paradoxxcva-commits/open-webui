@@ -5,8 +5,10 @@ services:
     volumes:
       - open-webui-data:/app/backend/data
     environment:
+      environment:
       WEBUI_SECRET_KEY: 6mQ_bXEgtcuB
       WEBUI_AUTH: "True"
+      ENABLE_OLLAMA_API: "False"  # Отключает поиск локального Ollama сервера
       HTTP_PROXY: socks5://nelly.ignorelist.com:25851
       HTTPS_PROXY: socks5://nelly.ignorelist.com:25851
       NO_PROXY: 'localhost,127.0.0.1,::1,host.docker.internal,open-webui,172.16.0.0/12,192.168.0.0/16,10.0.0.0/8'
