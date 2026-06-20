@@ -30,4 +30,3 @@ networks:
 volumes:
   open-webui-data:
     name: open-webui-data_volume
-    
