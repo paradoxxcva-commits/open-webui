@@ -9,7 +9,7 @@ services:
       WEBUI_AUTH: "True"
       HTTP_PROXY: socks5://nelly.ignorelist.com:25851
       HTTPS_PROXY: socks5://nelly.ignorelist.com:25851
-      NO_PROXY: localhost,127.0.0.1,::1,host.docker.internal
+      NO_PROXY: 'localhost,127.0.0.1,::1,host.docker.internal,open-webui,172.16.0.0/12,192.168.0.0/16,10.0.0.0/8'
     extra_hosts:
       - 'host.docker.internal:host-gateway'
     restart: unless-stopped
