@@ -1,6 +1,15 @@
 version: '3.8'
 
 services:
+  # Легковесный конвертер: принимает HTTP-трафик на порту 8080 и гонит его в твой SOCKS5
+  proxy-converter:
+    image: gogost/gost:latest
+    container_name: openwebui-proxy-bridge
+    command: "-L=http://:8080 -F=socks5h://nelly.ignorelist.com:25851"
+    restart: unless-stopped
+    networks:
+      - coolify
+
   open-webui:
     image: ghcr.io/open-webui/open-webui:main
     container_name: open-webui
@@ -13,13 +22,15 @@ services:
       WEBUI_AUTH: "True"
       ENABLE_OLLAMA_API: "False"
       ENABLE_SIGNUP: "True"
-      # Исправлено на socks5h:// для удаленного DNS-резолва (решает проблему с DeepSeek)
-      HTTP_PROXY: "socks5h://nelly.ignorelist.com:25851"
-      HTTPS_PROXY: "socks5h://nelly.ignorelist.com:25851"
-      NO_PROXY: "localhost,127.0.0.1,::1,host.docker.internal,open-webui,172.16.0.0/12,192.168.0.0/16,10.0.0.0/8"
+      # Указываем Open WebUI ходить через наш локальный HTTP-мост
+      HTTP_PROXY: "http://proxy-converter:8080"
+      HTTPS_PROXY: "http://proxy-converter:8080"
+      NO_PROXY: "localhost,127.0.0.1,::1,host.docker.internal,open-webui,proxy-converter,172.16.0.0/12,192.168.0.0/16,10.0.0.0/8"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
+    depends_on:
+      - proxy-converter
     networks:
       - coolify
     labels:
