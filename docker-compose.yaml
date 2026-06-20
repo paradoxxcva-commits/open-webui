@@ -15,8 +15,13 @@ services:
       - 'host.docker.internal:host-gateway'
     restart: unless-stopped
     labels:
-      # Явно говорим Traefik, на какой порт внутри этого compose-сервиса слать трафик
-      - "traefik.http.services.open-webui.loadbalancer.server.port=8080"
+      - "traefik.enable=true"
+      # Вручную создаем роутер для openwebui и вешаем его на веб-систему Coolify
+      - "traefik.http.routers.openwebui-custom.rule=Host(`openweb12.ignorelist.com`)"
+      - "traefik.http.routers.openwebui-custom.entrypoints=websecure"
+      - "traefik.http.routers.openwebui-custom.tls=true"
+      # Указываем точный порт
+      - "traefik.http.services.openwebui-custom.loadbalancer.server.port=8080"
 
 volumes:
   open-webui-data:
