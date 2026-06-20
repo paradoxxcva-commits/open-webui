@@ -17,13 +17,7 @@ services:
     restart: unless-stopped
     networks:
       - coolify
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.openwebui-custom.rule=Host(`openweb12.ignorelist.com`)
-      - traefik.http.routers.openwebui-custom.entrypoints=websecure
-      - traefik.http.routers.openwebui-custom.tls=true
-      - traefik.http.services.openwebui-custom.loadbalancer.server.port=8080
-networks:
+    networks:
   coolify:
     external: true
     name: coolify
