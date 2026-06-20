@@ -3,13 +3,13 @@ services:
     image: ghcr.io/open-webui/open-webui:main
     container_name: open-webui
     ports:
-      - "8080:8080"  # Открываем порт 8080 напрямую на домашнем сервере
+      - "8088:8080"
     volumes:
       - open-webui-data:/app/backend/data
     environment:
       WEBUI_SECRET_KEY: 6mQ_bXEgtcuB
       WEBUI_AUTH: "True"
-      ENABLE_OLLAMA_API: "False"  # Отключаем поиск локального Ollama
+      ENABLE_OLLAMA_API: "False"
     extra_hosts:
       - 'host.docker.internal:host-gateway'
     restart: unless-stopped
