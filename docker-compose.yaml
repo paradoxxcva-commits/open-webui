@@ -11,7 +11,7 @@ services:
       WEBUI_SECRET_KEY: 6mQ_bXEgtcuB
       WEBUI_AUTH: 'True'
       ENABLE_OLLAMA_API: 'False'
-      ENABLE_SIGNUP: 'True'
+      ENABLE_SIGNUP: 'False'
       
     extra_hosts:
       - 'host.docker.internal:host-gateway'
