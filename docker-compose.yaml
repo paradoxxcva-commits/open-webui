@@ -13,7 +13,7 @@ services:
       WEBUI_AUTH: 'True'
       ENABLE_OLLAMA_API: 'False'
       ENABLE_SIGNUP: 'True'
-      # Ходим в интернет через наш чистый локальный privoxy
+      # Направляем HTTP/HTTPS трафик на наш локальный контейнер-конвертер
       HTTP_PROXY: 'http://open-webui-privoxy:8118'
       HTTPS_PROXY: 'http://open-webui-privoxy:8118'
       NO_PROXY: 'localhost,127.0.0.1,::1,host.docker.internal,open-webui,open-webui-privoxy,172.16.0.0/12,192.168.0.0/16,10.0.0.0/8'
@@ -32,18 +32,27 @@ services:
       - privoxy
 
   privoxy:
-    # Используем современный, поддерживаемый образ
-    image: 'mcreations/privoxy:latest'
+    # Используем официальный и всегда доступный образ alpine
+    image: 'alpine/privoxy:latest'
     container_name: open-webui-privoxy
     restart: unless-stopped
     networks:
       - coolify
-    # Настройка проксирования без ломающихся sh-скриптов
-    environment:
-      - SOCKS_PROXY=nelly.ignorelist.com:25851
-      - SOCKS_VERSION=5t
-    ports:
-      - '8118:8118'
+    # Передаем конфигурацию через простую и понятную Docker-команду без сложных bash-скриптов.
+    # Точка в конце строки 'forward-socks5t / nelly.ignorelist.com:25851 .' критически важна!
+    command: [
+      "privoxy", "--no-daemon",
+      "--user", "privoxy",
+      "/etc/privoxy/config",
+      "&&", "echo", "listen-address 0.0.0.0:8118 >> /etc/privoxy/config",
+      "&&", "echo", "forward-socks5t / nelly.ignorelist.com:25851 . >> /etc/privoxy/config"
+    ]
+    # Чтобы не мучаться с синтаксисом переопределения команды внутри Alpine, 
+    # заменим запуск на чистый shell-однострочник, который точно перепишет конфиг:
+    entrypoint: >
+      sh -c "echo 'listen-address 0.0.0.0:8118' > /etc/privoxy/config &&
+             echo 'forward-socks5t / nelly.ignorelist.com:25851 .' >> /etc/privoxy/config &&
+             exec privoxy --no-daemon /etc/privoxy/config"
 
 networks:
   coolify:
