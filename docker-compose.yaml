@@ -1,4 +1,5 @@
 version: '3.8'
+
 services:
   open-webui:
     image: 'ghcr.io/open-webui/open-webui:main'
@@ -12,9 +13,11 @@ services:
       WEBUI_AUTH: 'True'
       ENABLE_OLLAMA_API: 'False'
       ENABLE_SIGNUP: 'True'
-      HTTP_PROXY: 'socks5h://nelly.ignorelist.com:25851'
-      HTTPS_PROXY: 'socks5h://nelly.ignorelist.com:25851'
-      NO_PROXY: 'localhost,127.0.0.1,::1,host.docker.internal,open-webui,172.16.0.0/12,192.168.0.0/16,10.0.0.0/8'
+      # Перенаправляем трафик на соседний контейнер privoxy по HTTP-протоколу
+      HTTP_PROXY: 'http://open-webui-privoxy:8118'
+      HTTPS_PROXY: 'http://open-webui-privoxy:8118'
+      # Исключаем локальные сети и хосты из проксирования
+      NO_PROXY: 'localhost,127.0.0.1,::1,host.docker.internal,open-webui,open-webui-privoxy,172.16.0.0/12,192.168.0.0/16,10.0.0.0/8'
     extra_hosts:
       - 'host.docker.internal:host-gateway'
     restart: unless-stopped
@@ -26,10 +29,26 @@ services:
       - traefik.http.routers.openwebui-custom.entrypoints=websecure
       - traefik.http.routers.openwebui-custom.tls=true
       - traefik.http.services.openwebui-custom.loadbalancer.server.port=8080
+    depends_on:
+      - privoxy
+
+  privoxy:
+    image: vimagick/privoxy
+    container_name: open-webui-privoxy
+    restart: unless-stopped
+    networks:
+      - coolify
+    # Настраиваем privoxy "на лету" пересылать всё на твой SOCKS5 с remote DNS (socks5t)
+    # Точка в конце команды обязательна!
+    command: >
+      sh -c "echo 'listen-address 0.0.0.0:8118' > /etc/privoxy/config &&
+             echo 'forward-socks5t / nelly.ignorelist.com:25851 .' >> /etc/privoxy/config"
+
 networks:
   coolify:
     external: true
     name: coolify
+
 volumes:
   open-webui-data:
     name: open-webui-data_volume
